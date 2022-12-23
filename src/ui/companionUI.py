@@ -3,6 +3,63 @@ import tkinter.filedialog
 from tkinter import ttk
 #Needed for normalizing the filepath between different OSes.
 import pathlib
+#imports for
+# import bytes
+import qrcode
+import base64
+import json
+
+class qrHelper:
+    def __init__(self):
+        #Future versions will use variable versions
+        self.QRVERSION = 7
+        self.METADATA_SIZE = 37
+        #the lenght limits of QR codes
+        #In the future will be used for variable lenght
+        self.QRLIMITS  = {}
+        self.QRLIMITS["2"] = 32 #version 2 25x25
+        self.QRLIMITS["3"] = 53 #version 3 29x 29
+        self.QRLIMITS["4"] = 78 #version 4 3x33
+        self.QRLIMITS["5"] = 106 #v5 37x37
+        self.QRLIMITS["6"] = 230 #v6 53x53
+        self.QRLIMITS["7"] = 2953 #v7  177x177
+
+
+    def calcNumFrames(self, _dataSize, _frameSize):
+        return (_dataSize // _frameSize) + (1 if (( _dataSize % _frameSize) > 0)  else 0)
+    def calcSize(self, _input):
+        size = len(_input)
+        return size
+    def createFrame(_data, _frameSize):
+        fullData = memoryview(_data).cast('c')
+        # sizeIN = len(_data)
+        sizeIN = len(fullData)
+        print(f"size of tx {sizeIN}")
+        framesNeeded = calcNumFrames(sizeIN, _frameSize)
+        print(f"frames needed {framesNeeded}")
+        print(f"limit needed {_frameSize}")
+
+        for x in range(0,framesNeeded):
+            start = x * _frameSize
+            stop = start + _frameSize
+            dataSlice = bytes(fullData[start:stop])
+            dataSlice = base64.b64encode(dataSlice).decode('ascii')
+            print(f"On slice {x} size of data {len(dataSlice)}")
+            frame = {
+            "index" : x,
+            "total" : framesNeeded,
+            "data" :  dataSlice
+            }
+            print(json.dumps(frame))
+            qr = qrcode.QRCode(
+                version=7,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            img = qrcode.make(frame)
+            # img.save(f"outputImg/{x}.png")
+            return img
 
 
 class companionUI:
